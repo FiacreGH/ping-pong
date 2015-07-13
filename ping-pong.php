@@ -3,16 +3,21 @@
 /*
 Script CLI (command line interface) for synchronizing two database
 */
-include('Classes/Database.php');
-include('Classes/Logger.php');
-$logger = new Logger();
 
-$dbOld = new Ecodev\Database('localhost', 'root', 'root');
-$dbOld->connect('DB-old');
-$dbNew = new Ecodev\Database('localhost', 'root', 'root');
-$dbNew->connect('DB-new');
-
-$convertFields = array(
+$importTables = array(
+	'tx_dam',
+	'tx_dam_cat',
+	'tx_dam_mm_cat',
+	'tx_datafilter_filters',
+	'tx_dataquery_queries',
+	'tx_displaycontroller_components_mm',
+	'tx_phpdisplay_displays',
+	'tx_speciality_domain_model_domain',
+	'tx_speciality_domain_model_group',
+	'tx_speciality_domain_model_master',
+	'tx_templatedisplay_displays'
+);
+$synchronizeRuleTables = array(
 	'tt_content' => array(
 
 		'subheader',
@@ -35,8 +40,7 @@ $convertFields = array(
 	'sys_refindex' => array(),
 	'sys_template' => array(),
 );
-
-$tables = array(
+$synchronizeTables = array(
 	'tt_content',
 	'pages',
 	'be_groups',
@@ -47,15 +51,39 @@ $tables = array(
 	'sys_refindex',
 	'sys_template',
 );
-foreach ($tables as $table) {
-	$logger->log('Synchronizing table " ' . $table . ' " .....');
-	$fieldStructures = $dbNew->select('SHOW COLUMNS FROM ' . $table);
+############################################
+include('Classes/Database.php');
+include('Classes/Logger.php');
+$logger = new Logger();
+
+$dbOld = new Ecodev\Database('localhost', 'root', 'root');
+$dbOld->connect('DB-old');
+$dbNew = new Ecodev\Database('localhost', 'root', 'root');
+$dbNew->connect('DB-new');
+foreach ($synchronizeTables as $synchronizeTable) {
+	$logger->log('Synchronizing table " ' . $synchronizeTable . ' " .....');
+	$fieldStructures = $dbNew->select('SHOW COLUMNS FROM ' . $synchronizeTable);
 	$newFieldsNames = array();
 	foreach ($fieldStructures as $fieldStructure) {
 		$newFieldsNames[] = $fieldStructure['Field'];
 	}
-	$toImportValues = $dbOld->select('SELECT * FROM ' . $table);
-	$dbNew->delete($table);//truncating table
+	$clause = '1 = 1';
+	$specialFields = array('deleted', 'disable', 'hidden');
+	foreach ($specialFields as $specialField) {
+		if (isset($newFieldsNames['deleted'])) {
+			$clause .= ' deleted = 1';
+		}
+		if (isset($newFieldsNames['disable'])) {
+			$clause .= ' disable = 1';
+		}
+		if (isset($newFieldsNames['hidden'])) {
+			$clause .= ' hidden = 1';
+		}
+	}
+	//$toImportValues = $dbOld->select('SELECT * FROM ' . $synchronizeTable . ' WHERE ' . $clause);
+	$toImportValues = $dbOld->select('SELECT * FROM ' . $synchronizeTable . ' WHERE ' . $clause);
+
+	$dbNew->delete($synchronizeTable);//truncating table
 	/*
 	$dbNew->query('TRUNCATE TABLE '. $table); => other way to do it
 	*/
@@ -65,37 +93,25 @@ foreach ($tables as $table) {
 				unset($toImportValue[$fieldName]);
 			}
 		}
-		foreach ($convertFields[$table] as $convertField) {
-			if (is_null($toImportValue[$convertField])) {
-				$toImportValue[$convertField] = '';
+		foreach ($synchronizeRuleTables[$synchronizeTable] as $synchronizeRuleTable) {
+			if (is_null($toImportValue[$synchronizeRuleTable])) {
+				$toImportValue[$synchronizeRuleTable] = '';
 			}
 		}
-		$dbNew->insert($table, $toImportValue);
+		$dbNew->insert($synchronizeTable, $toImportValue);
 	}
 	$logger->log('Synchronized!!!');
 }
 $logger->log('
 All tables synchronized succesfully!!!');
-$tables = array(
-	'tx_dam',
-	'tx_dam_cat',
-	'tx_dam_mm_cat',
-	'tx_datafilter_filters',
-	'tx_dataquery_queries',
-	'tx_displaycontroller_components_mm',
-	'tx_phpdisplay_displays',
-	'tx_speciality_domain_model_domain',
-	'tx_speciality_domain_model_group',
-	'tx_speciality_domain_model_master',
-	'tx_templatedisplay_displays'
-);
-foreach ($tables as $table) {
-	$logger->log('Import whole content of table: "' . $table.'"');
-	$exportCommand = 'mysqldump -u root -p"root" DB-old ' . $table . ' > /tmp/' . $table . '.sql';
+
+foreach ($importTables as $importTable) {
+	$logger->log('Import whole content of table: "' . $importTable . '"');
+	$exportCommand = 'mysqldump -u root -p"root" DB-old ' . $importTable . ' > /tmp/' . $importTable . '.sql';
 	exec($exportCommand);
-	$importCommand = 'mysql -u root -p"root" DB-new < /tmp/' . $table . '.sql';
+	$importCommand = 'mysql -u root -p"root" DB-new < /tmp/' . $importTable . '.sql';
 	exec($importCommand);
-	$logger->log('Done for:' . $table . '!!!');
+	$logger->log('Done for:' . $importTable . '!!!');
 }
 $logger->log('
 All tables imported succesfully in the new database!!!');
