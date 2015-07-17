@@ -8,10 +8,6 @@ $importTables = array(
 	'tx_dam',
 	'tx_dam_cat',
 	'tx_dam_mm_cat',
-	'tx_datafilter_filters',
-	'tx_dataquery_queries',
-	'tx_displaycontroller_components_mm',
-	'tx_phpdisplay_displays',
 	'tx_speciality_domain_model_domain',
 	'tx_speciality_domain_model_group',
 	'tx_speciality_domain_model_master',
@@ -39,6 +35,10 @@ $synchronizeRuleTables = array(
 	'sys_domain' => array(),
 	'sys_refindex' => array(),
 	'sys_template' => array(),
+	'tx_datafilter_filters'=> array(),
+	'tx_dataquery_queries'=> array(),
+	'tx_displaycontroller_components_mm'=> array(),
+	'tx_phpdisplay_displays'=> array(),
 );
 $synchronizeTables = array(
 	'tt_content',
@@ -47,9 +47,12 @@ $synchronizeTables = array(
 	'be_users',
 	'fe_groups',
 	'fe_users',
-	'sys_domain',
 	'sys_refindex',
 	'sys_template',
+	'tx_datafilter_filters',
+	'tx_dataquery_queries',
+	'tx_displaycontroller_components_mm',
+	'tx_phpdisplay_displays',
 );
 ############################################
 include('Classes/Database.php');
