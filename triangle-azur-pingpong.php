@@ -35,10 +35,10 @@ $synchronizeRuleTables = array(
 	'sys_domain' => array(),
 	'sys_refindex' => array(),
 	'sys_template' => array(),
-	'tx_datafilter_filters'=> array(),
-	'tx_dataquery_queries'=> array(),
-	'tx_displaycontroller_components_mm'=> array(),
-	'tx_phpdisplay_displays'=> array(),
+	'tx_datafilter_filters' => array(),
+	'tx_dataquery_queries' => array(),
+	'tx_displaycontroller_components_mm' => array(),
+	'tx_phpdisplay_displays' => array(),
 );
 $synchronizeTables = array(
 	'tt_content',
@@ -65,13 +65,11 @@ include('Credentials.php');
 
 $logger = new Logger();
 
-
 $dbOld = new Ecodev\Database($oldCredentials['host'], $oldCredentials['username'], $oldCredentials['password'], $oldCredentials['port']);
 $dbOld->connect($oldCredentials['database']);
 
 $dbNew = new Ecodev\Database($newCredentials['host'], $newCredentials['username'], $newCredentials['password'], $newCredentials['port']);
 $dbNew->connect($newCredentials['database']);
-
 
 // Synchronize tables
 foreach ($synchronizeTables as $synchronizeTable) {
@@ -84,22 +82,18 @@ foreach ($synchronizeTables as $synchronizeTable) {
 
 	// Build clause part of the request
 	$clause = '1 = 1';
-	$specialFields = array('deleted', 'disable', 'hidden');
+	$specialFields = array(
+		'deleted',
+		'disable',
+		'hidden'
+	);
 	foreach ($specialFields as $specialField) {
-		if (isset($newFieldsNames['deleted'])) {
-			$clause .= ' deleted = 1';
-		}
-		if (isset($newFieldsNames['disable'])) {
-			$clause .= ' disable = 1';
-		}
-		if (isset($newFieldsNames['hidden'])) {
-			$clause .= ' hidden = 1';
+		if (in_array($specialField, $newFieldsNames)) {
+			$clause .= ' AND ' . $specialField . ' = 0';
 		}
 	}
-
 	//$toImportValues = $dbOld->select('SELECT * FROM ' . $synchronizeTable . ' WHERE ' . $clause);
 	$toImportValues = $dbOld->select('SELECT * FROM ' . $synchronizeTable . ' WHERE ' . $clause);
-
 	$dbNew->delete($synchronizeTable);//truncating table
 	/*
 	$dbNew->query('TRUNCATE TABLE '. $table); => other way to do it
@@ -121,7 +115,6 @@ foreach ($synchronizeTables as $synchronizeTable) {
 }
 $logger->log('
 All tables synchronized succesfully!!!');
-
 
 // Import tables
 foreach ($importTables as $importTable) {
