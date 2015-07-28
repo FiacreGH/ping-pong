@@ -54,22 +54,35 @@ $synchronizeTables = array(
 	'tx_displaycontroller_components_mm',
 	'tx_phpdisplay_displays',
 );
+
 ############################################
+# Beginning of the script
+############################################
+
 include('Classes/Database.php');
 include('Classes/Logger.php');
+include('Credentials.php');
+
 $logger = new Logger();
 
-$dbOld = new Ecodev\Database('localhost', 'root', 'root');
-$dbOld->connect('DB-old');
-$dbNew = new Ecodev\Database('localhost', 'root', 'root');
-$dbNew->connect('DB-new');
+
+$dbOld = new Ecodev\Database($oldCredentials['host'], $oldCredentials['username'], $oldCredentials['password'], $oldCredentials['port']);
+$dbOld->connect($oldCredentials['database']);
+
+$dbNew = new Ecodev\Database($newCredentials['host'], $newCredentials['username'], $newCredentials['password'], $newCredentials['port']);
+$dbNew->connect($newCredentials['database']);
+
+
+// Synchronize tables
 foreach ($synchronizeTables as $synchronizeTable) {
-	$logger->log('Synchronizing table " ' . $synchronizeTable . ' " .....');
+	$logger->log('Synchronizing table "' . $synchronizeTable . '" .....');
 	$fieldStructures = $dbNew->select('SHOW COLUMNS FROM ' . $synchronizeTable);
 	$newFieldsNames = array();
 	foreach ($fieldStructures as $fieldStructure) {
 		$newFieldsNames[] = $fieldStructure['Field'];
 	}
+
+	// Build clause part of the request
 	$clause = '1 = 1';
 	$specialFields = array('deleted', 'disable', 'hidden');
 	foreach ($specialFields as $specialField) {
@@ -83,6 +96,7 @@ foreach ($synchronizeTables as $synchronizeTable) {
 			$clause .= ' hidden = 1';
 		}
 	}
+
 	//$toImportValues = $dbOld->select('SELECT * FROM ' . $synchronizeTable . ' WHERE ' . $clause);
 	$toImportValues = $dbOld->select('SELECT * FROM ' . $synchronizeTable . ' WHERE ' . $clause);
 
@@ -108,13 +122,28 @@ foreach ($synchronizeTables as $synchronizeTable) {
 $logger->log('
 All tables synchronized succesfully!!!');
 
+
+// Import tables
 foreach ($importTables as $importTable) {
 	$logger->log('Import whole content of table: "' . $importTable . '"');
-	$exportCommand = 'mysqldump -u root -p"root" DB-old ' . $importTable . ' > /tmp/' . $importTable . '.sql';
+	$exportCommand = sprintf('mysqldump -u %s -p"%s" %s %s > /tmp/%s.sql',
+		$oldCredentials['username'],
+		$oldCredentials['password'],
+		$oldCredentials['database'],
+		$importTable,
+		$importTable
+	);
+
 	exec($exportCommand);
-	$importCommand = 'mysql -u root -p"root" DB-new < /tmp/' . $importTable . '.sql';
+	$importCommand = sprintf('mysql -u %s -p"%s" %s < /tmp/%s.sql',
+		$newCredentials['username'],
+		$newCredentials['password'],
+		$newCredentials['database'],
+		$importTable
+	);
+
 	exec($importCommand);
-	$logger->log('Done for:' . $importTable . '!!!');
+	$logger->log('Done for: ' . $importTable . '!!!');
 }
 $logger->log('
 All tables imported succesfully in the new database!!!');
