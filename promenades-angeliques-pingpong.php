@@ -5,32 +5,39 @@ Script CLI (command line interface) for synchronizing two database
 */
 
 $importTables = array(
+	'sys_file',
 	'tx_datafilter_filters',
 	'tx_dataquery_queries',
 	'tx_displaycontroller_components_mm',
 	'tx_phpdisplay_displays'
 );
 $synchronizeRuleTables = array(
+	'sys_language'=> array(),
+	'pages_language_overlay' => array(),
 	'tt_content'=> array(),
 	'pages' => array(),
 	'be_groups' => array(),
-	'sys_file' => array(),
 	'be_users' => array(),
 	'fe_groups' => array(),
 	'fe_users' => array(),
 	'sys_refindex' => array(),
 	'sys_template' => array(),
+	'sys_category' => array(),
+	'sys_category_record_mm' => array(),
 );
 $synchronizeTables = array(
+	'sys_language',
+	'pages_language_overlay',
 	'tt_content',
 	'pages',
 	'be_groups',
-	'sys_file',
 	'be_users',
 	'fe_groups',
 	'fe_users',
 	'sys_refindex',
 	'sys_template',
+	'sys_category',
+	'sys_category_record_mm',
 );
 
 ###########################
